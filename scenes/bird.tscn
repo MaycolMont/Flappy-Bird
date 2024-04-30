@@ -1,0 +1,48 @@
+[gd_scene load_steps=9 format=3 uid="uid://b40rde45lxe2m"]
+
+[ext_resource type="Script" path="res://scripts/bird_player.gd" id="1_l07b5"]
+[ext_resource type="Texture2D" uid="uid://b5vkrlmk73kmv" path="res://sources/sprites/bird1.png" id="2_fv3cn"]
+[ext_resource type="Texture2D" uid="uid://bpa0o4pp7b2un" path="res://sources/sprites/bird2.png" id="3_ruw2l"]
+[ext_resource type="Texture2D" uid="uid://cjlrcsd3b3lsi" path="res://sources/sprites/bird3.png" id="4_3px1w"]
+[ext_resource type="AudioStream" uid="uid://c2o8q7si7ht11" path="res://sources/audio/die.ogg" id="5_wpejr"]
+[ext_resource type="AudioStream" uid="uid://cpigl7gm4eb41" path="res://sources/audio/wing.ogg" id="8_ct3wc"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fdb0s"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_fv3cn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_ruw2l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_3px1w")
+}],
+"loop": true,
+"name": &"fly",
+"speed": 10.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4jkmb"]
+radius = 16.5
+height = 41.0
+
+[node name="Bird" type="CharacterBody2D"]
+script = ExtResource("1_l07b5")
+
+[node name="Sprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_fdb0s")
+animation = &"fly"
+frame_progress = 0.0986126
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-0.5, 0)
+rotation = 1.5708
+shape = SubResource("CapsuleShape2D_4jkmb")
+
+[node name="DieAudio" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("5_wpejr")
+
+[node name="WingAudio" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("8_ct3wc")

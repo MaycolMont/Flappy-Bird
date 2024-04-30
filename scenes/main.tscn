@@ -1,0 +1,333 @@
+[gd_scene load_steps=20 format=3 uid="uid://bx6qmlu1y81jn"]
+
+[ext_resource type="Texture2D" uid="uid://db2qccgfkfv2q" path="res://sources/sprites/bg.png" id="1_smdmh"]
+[ext_resource type="PackedScene" uid="uid://b40rde45lxe2m" path="res://scenes/bird.tscn" id="2_v3ahv"]
+[ext_resource type="Texture2D" uid="uid://d1q1b07t2eh1h" path="res://sources/sprites/ground.png" id="3_a614b"]
+[ext_resource type="PackedScene" uid="uid://d4vnd3uby462" path="res://scenes/pipe.tscn" id="4_vkmq8"]
+[ext_resource type="AudioStream" uid="uid://dit17vvt3yel3" path="res://sources/audio/point.ogg" id="5_0vt26"]
+[ext_resource type="PackedScene" uid="uid://bi6gqvrh3j5ip" path="res://scenes/menu_canvas.tscn" id="5_pwvao"]
+[ext_resource type="AudioStream" uid="uid://cux2ofuh0ql6d" path="res://sources/audio/hit.ogg" id="6_684g2"]
+[ext_resource type="PackedScene" uid="uid://cmuaal8f65uka" path="res://scenes/over_canvas.tscn" id="6_n5eqd"]
+[ext_resource type="PackedScene" uid="uid://b10cehvr0l4xw" path="res://scenes/pause_canvas.tscn" id="7_yv7c4"]
+
+[sub_resource type="GDScript" id="GDScript_rck6e"]
+resource_name = "move_ground"
+script/source = "extends StaticBody2D
+
+func _process(delta):
+	position.x -= 400 * delta
+	if position.x <= -1728/2:
+		position.x = 0
+"
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_boan8"]
+b = Vector2(1728, 0)
+
+[sub_resource type="GDScript" id="GDScript_ktj3l"]
+resource_name = "obstacle_generator"
+script/source = "extends Node
+
+@export var pipe_scene : PackedScene
+@export var spawner_marker : Marker2D
+
+@export var pipe_velocity = 400
+
+func start():
+	$Timer.start()
+	var pipes = get_tree().get_nodes_in_group('pipes')
+	if pipes:
+		for pipe in pipes:
+			pipe.queue_free()
+
+func _on_timer_timeout():
+	var pipe = pipe_scene.instantiate()
+	pipe.obstacle_velocity = pipe_velocity
+	pipe.scored.connect($\"../StateMachine/PlayState\"._on_scored)
+	pipe.position = spawner_marker.position
+	pipe.position.y = spawner_marker.position.y + randf_range(-150, 150)
+	get_parent().add_child(pipe)
+"
+
+[sub_resource type="GDScript" id="GDScript_erp5w"]
+resource_name = "score_container"
+script/source = "extends HBoxContainer
+
+@onready var score_label = %Score
+@onready var max_score = %MaxScore
+
+func _process(delta):
+	score_label.text = str(Global.score)
+	max_score.text = str(Global.game_data['max_score'])
+"
+
+[sub_resource type="GDScript" id="GDScript_6ht02"]
+resource_name = "state_machine"
+script/source = "@icon(\"res://icons/machine-state.png\")
+extends Node
+
+@export var current_state : State
+@export var menu_manager : Node
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	for state in get_children():
+		if state is State:
+			state.menu_manager = menu_manager
+	current_state.enter()
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	if current_state.next_state != null:
+		change_state(current_state.next_state)
+	current_state.handle_input()
+	
+func change_state(new_state):
+	current_state.next_state = null
+	current_state.exit()
+	current_state = new_state
+	current_state.enter()
+"
+
+[sub_resource type="GDScript" id="GDScript_phoht"]
+resource_name = "menu_state"
+script/source = "extends State
+
+@export var play_state : State
+@onready var bird = $\"../../Bird\"
+
+func enter():
+	Global.load_data()
+
+func handle_input():
+	if Input.is_action_just_pressed(\"jump\"):
+		Global.new_game = true
+		next_state = play_state
+
+func _on_play_button_pressed():
+	Global.new_game = true
+	next_state = play_state
+"
+
+[sub_resource type="GDScript" id="GDScript_2j2jx"]
+resource_name = "play_state"
+script/source = "extends State
+
+@export var over_state : State
+@export var paused_state : State
+
+@onready var bird = $\"../../Bird\"
+@onready var pipes_spawner = $\"../../PipesSpawner\"
+
+func enter():
+	menu_manager.hide_current()
+
+	if Global.new_game:
+		new_game()
+
+	if get_tree().paused:
+		get_tree().paused = false
+
+func handle_input():
+	if Input.is_action_just_released(\"pause\"):
+		next_state = paused_state
+
+func exit():
+	get_tree().paused = true
+	Global.new_game = false
+	print(Global.new_game)
+
+func new_game():
+	bird.fly(Vector2(110, 250))
+	pipes_spawner.start()
+	Global.score = 0
+	
+func _on_scored():
+	Global.score += 1
+	$PointAudio.play()
+
+func _on_bird_collided():
+	next_state = over_state
+	$HitAudio.play()
+"
+
+[sub_resource type="GDScript" id="GDScript_7pcsl"]
+resource_name = "pause_state"
+script/source = "extends State
+
+@export var play_state : State
+@export var pause_canvas : CanvasLayer
+
+func enter():
+	menu_manager.show(pause_canvas)
+
+func handle_input():
+	if Input.is_action_just_released(\"pause\"):
+		next_state = play_state
+
+func _on_contiue_button_pressed():
+	next_state = play_state
+"
+
+[sub_resource type="GDScript" id="GDScript_01voc"]
+resource_name = "over_state"
+script/source = "extends State
+
+@export var play_state : State
+@export var over_canvas : CanvasLayer
+
+func enter():
+	menu_manager.show(over_canvas)
+	Global.set_max_score()
+
+func handle_input():
+	if Input.is_action_just_pressed(\"jump\"):
+		Global.new_game = true
+		next_state = play_state
+
+func _on_restart_button_pressed():
+	Global.new_game = true
+	next_state = play_state
+"
+
+[sub_resource type="GDScript" id="GDScript_3jgeb"]
+resource_name = "menu_manager"
+script/source = "extends Node
+
+@export var current_menu : CanvasLayer
+
+func _ready():
+	current_menu.offset.x = 0
+	current_menu.visible = true
+
+func hide_current():
+	current_menu.desappear()
+	current_menu = null
+
+func show(new_canvas):
+	if current_menu:
+		current_menu.desappear()
+	current_menu = new_canvas
+	current_menu.appear()
+"
+
+[node name="FlappyBird" type="Node"]
+
+[node name="Bg" type="Sprite2D" parent="."]
+texture = ExtResource("1_smdmh")
+centered = false
+
+[node name="Bird" parent="." instance=ExtResource("2_v3ahv")]
+position = Vector2(110, 250)
+
+[node name="Ground" type="StaticBody2D" parent="."]
+z_index = 1
+position = Vector2(0, 600)
+script = SubResource("GDScript_rck6e")
+metadata/_edit_group_ = true
+
+[node name="Sprite2D" type="Sprite2D" parent="Ground"]
+texture = ExtResource("3_a614b")
+centered = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("SegmentShape2D_boan8")
+
+[node name="PipesSpawner" type="Node" parent="." node_paths=PackedStringArray("spawner_marker") groups=["reusable"]]
+script = SubResource("GDScript_ktj3l")
+pipe_scene = ExtResource("4_vkmq8")
+spawner_marker = NodePath("SpawnerMarker")
+
+[node name="SpawnerMarker" type="Marker2D" parent="PipesSpawner"]
+position = Vector2(932, 305)
+
+[node name="Timer" type="Timer" parent="PipesSpawner"]
+
+[node name="HudCanvas" type="CanvasLayer" parent="."]
+
+[node name="Hud" type="HBoxContainer" parent="HudCanvas"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 23.0
+grow_horizontal = 2
+size_flags_horizontal = 4
+alignment = 1
+script = SubResource("GDScript_erp5w")
+
+[node name="VBoxContainer" type="HBoxContainer" parent="HudCanvas/Hud"]
+layout_mode = 2
+
+[node name="MaxScoreLabel" type="Label" parent="HudCanvas/Hud/VBoxContainer"]
+layout_mode = 2
+text = "Max Score: "
+
+[node name="MaxScore" type="Label" parent="HudCanvas/Hud/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HudCanvas/Hud"]
+layout_mode = 2
+
+[node name="ScoreLabel" type="Label" parent="HudCanvas/Hud/HBoxContainer"]
+layout_mode = 2
+text = "Score: "
+
+[node name="Score" type="Label" parent="HudCanvas/Hud/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0"
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("current_state", "menu_manager")]
+process_mode = 3
+script = SubResource("GDScript_6ht02")
+current_state = NodePath("MenuState")
+menu_manager = NodePath("../MenuCanvas")
+
+[node name="MenuState" type="Node" parent="StateMachine" node_paths=PackedStringArray("play_state")]
+script = SubResource("GDScript_phoht")
+play_state = NodePath("../PlayState")
+
+[node name="PlayState" type="Node" parent="StateMachine" node_paths=PackedStringArray("over_state", "paused_state")]
+script = SubResource("GDScript_2j2jx")
+over_state = NodePath("../OverState")
+paused_state = NodePath("../PauseState")
+
+[node name="HitAudio" type="AudioStreamPlayer2D" parent="StateMachine/PlayState"]
+stream = ExtResource("6_684g2")
+
+[node name="PointAudio" type="AudioStreamPlayer2D" parent="StateMachine/PlayState"]
+stream = ExtResource("5_0vt26")
+
+[node name="PauseState" type="Node" parent="StateMachine" node_paths=PackedStringArray("play_state", "pause_canvas")]
+script = SubResource("GDScript_7pcsl")
+play_state = NodePath("../PlayState")
+pause_canvas = NodePath("../../MenuCanvas/PauseCanvas")
+
+[node name="OverState" type="Node" parent="StateMachine" node_paths=PackedStringArray("play_state", "over_canvas")]
+script = SubResource("GDScript_01voc")
+play_state = NodePath("../PlayState")
+over_canvas = NodePath("../../MenuCanvas/OverCanvas")
+
+[node name="MenuCanvas" type="Node" parent="." node_paths=PackedStringArray("current_menu")]
+process_mode = 3
+script = SubResource("GDScript_3jgeb")
+current_menu = NodePath("MenuCanvas")
+
+[node name="MenuCanvas" parent="MenuCanvas" instance=ExtResource("5_pwvao")]
+visible = false
+
+[node name="OverCanvas" parent="MenuCanvas" instance=ExtResource("6_n5eqd")]
+visible = false
+
+[node name="PauseCanvas" parent="MenuCanvas" instance=ExtResource("7_yv7c4")]
+visible = false
+
+[connection signal="collided" from="Bird" to="StateMachine/PlayState" method="_on_bird_collided"]
+[connection signal="timeout" from="PipesSpawner/Timer" to="PipesSpawner" method="_on_timer_timeout"]
+[connection signal="pressed" from="MenuCanvas/MenuCanvas/VBoxContainer/Button" to="StateMachine/MenuState" method="_on_play_button_pressed"]
+[connection signal="pressed" from="MenuCanvas/OverCanvas/VBoxContainer/TextureButton" to="StateMachine/OverState" method="_on_restart_button_pressed"]
+[connection signal="pressed" from="MenuCanvas/PauseCanvas/VBoxContainer/Button" to="StateMachine/PauseState" method="_on_contiue_button_pressed"]
+
+[editable path="MenuCanvas/MenuCanvas"]
+[editable path="MenuCanvas/OverCanvas"]
+[editable path="MenuCanvas/PauseCanvas"]

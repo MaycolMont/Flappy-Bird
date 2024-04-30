@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://bi6gqvrh3j5ip"]
+
+[ext_resource type="PackedScene" uid="uid://bmr6unxydty0n" path="res://scenes/canvas_base.tscn" id="1_we038"]
+
+[node name="MenuCanvas" instance=ExtResource("1_we038")]
+
+[node name="Label" parent="VBoxContainer" index="0"]
+text = "Flappy Bird"
+
+[node name="Button" parent="VBoxContainer" index="1"]
+mouse_default_cursor_shape = 2
+text = "Jugar"

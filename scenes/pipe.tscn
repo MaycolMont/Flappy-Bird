@@ -1,0 +1,72 @@
+[gd_scene load_steps=5 format=3 uid="uid://d4vnd3uby462"]
+
+[ext_resource type="Texture2D" uid="uid://bqlsxqssc08mt" path="res://sources/sprites/pipe.png" id="1_ed566"]
+
+[sub_resource type="GDScript" id="GDScript_6p37b"]
+resource_name = "obstacle"
+script/source = "class_name Obstacle
+extends Node2D
+
+signal scored
+
+var obstacle_velocity : float
+
+func _process(delta):
+	position.x -= obstacle_velocity * delta
+
+func _on_score_area_body_entered(body):
+	scored.emit()
+
+func _on_visible_on_screen_exited():
+	queue_free()
+"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1equv"]
+size = Vector2(67, 530)
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_ah5xe"]
+a = Vector2(0, -70)
+b = Vector2(0, 70)
+
+[node name="Obstacle" type="Node2D" groups=["pipes"]]
+script = SubResource("GDScript_6p37b")
+
+[node name="TopTube" type="StaticBody2D" parent="."]
+position = Vector2(0, -70)
+metadata/_edit_group_ = true
+
+[node name="TopPipeSprite" type="Sprite2D" parent="TopTube"]
+position = Vector2(3, -278)
+texture = ExtResource("1_ed566")
+flip_v = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TopTube"]
+position = Vector2(1, -265)
+shape = SubResource("RectangleShape2D_1equv")
+
+[node name="BottomTube" type="StaticBody2D" parent="."]
+position = Vector2(0, 70)
+metadata/_edit_group_ = true
+
+[node name="ButtonPipeSprite" type="Sprite2D" parent="BottomTube"]
+position = Vector2(1, 278)
+texture = ExtResource("1_ed566")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BottomTube"]
+position = Vector2(0, 265)
+shape = SubResource("RectangleShape2D_1equv")
+
+[node name="ScoreArea" type="Area2D" parent="."]
+position = Vector2(45, 0)
+metadata/_edit_group_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ScoreArea"]
+position = Vector2(1, 0)
+shape = SubResource("SegmentShape2D_ah5xe")
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]
+position = Vector2(48, 0)
+rect = Rect2(0, -10, 20, 20)
+
+[connection signal="body_entered" from="ScoreArea" to="." method="_on_score_area_body_entered"]
+[connection signal="screen_exited" from="VisibleOnScreenNotifier2D" to="." method="_on_visible_on_screen_exited"]

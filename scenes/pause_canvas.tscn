@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://b10cehvr0l4xw"]
+
+[ext_resource type="PackedScene" uid="uid://bmr6unxydty0n" path="res://scenes/canvas_base.tscn" id="1_7ymis"]
+
+[node name="PauseCanvas" instance=ExtResource("1_7ymis")]
+
+[node name="Label" parent="VBoxContainer" index="0"]
+text = "Paused"
+
+[node name="Button" parent="VBoxContainer" index="1"]
+text = "Continue
+"

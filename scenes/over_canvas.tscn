@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://cmuaal8f65uka"]
+
+[ext_resource type="PackedScene" uid="uid://bmr6unxydty0n" path="res://scenes/canvas_base.tscn" id="1_jywgp"]
+[ext_resource type="Texture2D" uid="uid://448gnbeb70vj" path="res://sources/sprites/restart.png" id="2_4eoum"]
+[ext_resource type="Texture2D" uid="uid://qn2uqghe7lse" path="res://sources/sprites/gameover.png" id="2_pol8f"]
+
+[node name="OverCanvas" instance=ExtResource("1_jywgp")]
+
+[node name="VBoxContainer" parent="." index="1"]
+theme_override_constants/separation = 30
+
+[node name="TextureRect" parent="VBoxContainer" index="0"]
+texture = ExtResource("2_pol8f")
+
+[node name="Label" parent="VBoxContainer" index="1"]
+visible = false
+text = "Game Over"
+
+[node name="Button" parent="VBoxContainer" index="2" groups=["button"]]
+visible = false
+text = "Restart"
+
+[node name="TextureButton" parent="VBoxContainer" index="3" groups=["button"]]
+size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("2_4eoum")

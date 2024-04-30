@@ -1,0 +1,71 @@
+[gd_scene load_steps=3 format=3 uid="uid://bmr6unxydty0n"]
+
+[ext_resource type="AudioStream" uid="uid://8uxjjscgwm3k" path="res://sources/audio/swoosh.ogg" id="1_kju4k"]
+
+[sub_resource type="GDScript" id="GDScript_su306"]
+resource_name = "menu_base"
+script/source = "extends CanvasLayer
+
+@export var anim_duration : float = 0.5
+@onready var swoosh_audio = $SwooshAudio
+
+func appear():
+	visible = true
+	set_disabled_buttons(false)
+	swoosh_audio.play()
+	var tween = create_tween().set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_ELASTIC)
+	tween.tween_property(self, \"offset:x\", 0, anim_duration)
+
+func desappear():
+	swoosh_audio.play()
+	set_disabled_buttons(true)
+	var tween = create_tween().set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_ELASTIC)
+	tween.tween_property(self, \"offset:x\", 768, anim_duration)
+	tween.tween_callback(_hide)
+
+func _hide():
+	visible = not visible
+
+func set_disabled_buttons(value : bool):
+	var buttons = get_tree().get_nodes_in_group('button')
+	for button in buttons:
+		button.disabled = value
+"
+
+[node name="Canvas" type="CanvasLayer"]
+offset = Vector2(768, 0)
+transform = Transform2D(1, 0, 0, 1, 768, 0)
+script = SubResource("GDScript_su306")
+
+[node name="SwooshAudio" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource("1_kju4k")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -31.0
+offset_top = -29.0
+offset_right = 31.0
+offset_bottom = 29.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="TextureRect" type="TextureRect" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Titulo"
+horizontal_alignment = 1
+
+[node name="Button" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Button
+"
+
+[node name="TextureButton" type="TextureButton" parent="VBoxContainer"]
+layout_mode = 2
