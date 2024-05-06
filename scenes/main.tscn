@@ -140,7 +140,7 @@ func new_game():
 	bird.fly(Vector2(110, 250))
 	pipes_spawner.start()
 	Global.score = 0
-	
+
 func _on_scored():
 	Global.score += 1
 	$PointAudio.play()
